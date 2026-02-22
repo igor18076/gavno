@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Каталог | Stone Atelier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="catalog">
+    <div class="noise"></div>
+    <main class="page-shell">
+      <nav class="topbar topbar-rich page-topbar">
+        <a class="brand-link" href="/"><div class="brand">Stone Atelier</div></a>
+        <div class="topbar-links"><a class="ghost-link" href="/about">О мастерской</a><a class="ghost-link" href="/size-guide">Размеры</a></div>
+      </nav>
+      <section class="section">
+        <div class="section-head">
+          <div><p class="eyebrow">Каталог</p><h1 class="page-title">Все украшения</h1></div>
+          <a class="ghost-link" href="/">На главную</a>
+        </div>
+        <div id="catalog-filters" class="catalog-filters"></div>
+        <div id="active-filters" class="active-filters"></div>
+        <div id="catalog-grid" class="catalog-grid"></div>
+      </section>
+    </main>
+    <div id="quick-view-modal" class="quick-view-modal hidden" aria-hidden="true"></div>
+    <script src="/site-content.js"></script>
+    <script src="/storefront.js"></script>
+  </body>
+</html>

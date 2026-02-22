@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stone Atelier CMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin-body cms-admin-body">
+    <div class="noise"></div>
+    <main class="admin-shell cms-shell">
+      <section id="cms-login" class="panel auth-panel">
+        <p class="eyebrow">Stone Atelier CMS</p>
+        <h1>Вход</h1>
+        <form id="cms-login-form" class="form-grid">
+          <label>Email <input type="email" name="email" required /></label>
+          <label>Пароль <input type="password" name="password" required /></label>
+          <button class="btn btn-primary" type="submit">Войти</button>
+        </form>
+        <p id="cms-login-error" class="form-error"></p>
+      </section>
+
+      <section id="cms-app" class="hidden">
+        <div class="panel">
+          <div class="cms-topbar">
+            <div>
+              <p class="eyebrow">Stone Atelier</p>
+              <h1>Управление контентом</h1>
+              <p id="cms-user-badge" class="small-muted"></p>
+            </div>
+            <div class="form-actions">
+              <a class="btn btn-secondary" href="/" target="_blank" rel="noreferrer">Открыть витрину</a>
+              <button id="cms-logout" class="btn btn-secondary" type="button">Выйти</button>
+            </div>
+          </div>
+          <div id="cms-counters" class="cms-counters"></div>
+        </div>
+
+        <section class="panel">
+          <div id="cms-toast" class="cms-toast hidden"></div>
+          <div class="cms-tabs" id="cms-tabs">
+            <button class="chip active" data-tab="products" type="button">Товары</button>
+            <button class="chip" data-tab="stones" type="button">Камни</button>
+            <button class="chip" data-tab="collections" type="button">Коллекции</button>
+            <button class="chip" data-tab="reviews" type="button">Отзывы</button>
+            <button class="chip" data-tab="pages" type="button">Страницы</button>
+            <button class="chip" data-tab="media" type="button">Медиа</button>
+            <button class="chip" data-tab="settings" type="button">Настройки</button>
+            <button class="chip" data-tab="users" type="button">Пользователи</button>
+            <button class="chip" data-tab="audit" type="button">Аудит</button>
+          </div>
+          <div id="cms-tab-content" class="cms-tab-content"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/admin-panel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "nextId": 5,
+  "heroCollection": {
+    "badge": "Новая коллекция",
+    "title": "Северный свет",
+    "description": "Опал, лунный камень, кварц и серебро в спокойной палитре.",
+    "stones": [
+      "Опал",
+      "Агат",
+      "Турмалин",
+      "Кварц"
+    ]
+  },
+  "items": [
+    {
+      "id": 1,
+      "name": "Браслет «Лунный Опал»",
+      "stone": "Опал, горный хрусталь",
+      "price": 4900,
+      "imageUrl": "https://source.unsplash.com/1600x900/?bracelet,gemstone",
+      "description": "Легкий браслет с мягким переливом и серебристыми акцентами.",
+      "inStock": true,
+      "featured": true
+    },
+    {
+      "id": 2,
+      "name": "Колье «Черный Турмалин»",
+      "stone": "Турмалин, шунгит",
+      "price": 8200,
+      "imageUrl": "https://cs2.livemaster.ru/storage/72/7f/99a71995adc4f9a4bdd1700e94fe--ukrasheniya-ukrasheniya-iz-naturalnyh-kamnej.jpg",
+      "description": "Графичное колье для контрастных образов и многослойных комплектов.",
+      "inStock": true,
+      "featured": true
+    },
+    {
+      "id": 3,
+      "name": "Серьги «Розовый Кварц»",
+      "stone": "Розовый кварц",
+      "price": 3600,
+      "imageUrl": "https://www.agat77.ru/upload/medialibrary/b9c/Busy_samotsvety_Marta_korotkie_50smBusy_iz_kamnya.jpeg",
+      "description": "Минималистичные серьги с деликатным сиянием натурального камня.",
+      "inStock": true,
+      "featured": false
+    },
+    {
+      "id": 4,
+      "name": "123",
+      "stone": "123",
+      "price": 123,
+      "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8EeThWo78QB1OCYksyNqQqf3j9C8hAMnsKQ&s",
+      "description": "123",
+      "inStock": true,
+      "featured": false
+    }
+  ]
+}

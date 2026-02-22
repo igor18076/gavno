@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stone Atelier | Украшения из натуральных камней</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="home">
+    <div class="noise"></div>
+    <header class="hero">
+      <nav class="topbar topbar-rich">
+        <a class="brand-link" href="/"><div class="brand">Stone Atelier</div></a>
+        <div class="topbar-links">
+          <a class="ghost-link" href="/catalog">Каталог</a>
+          <a class="ghost-link" href="/about">О мастерской</a>
+          <a class="ghost-link" href="/size-guide">Размеры</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Натуральные камни • ручная сборка</p>
+          <h1>Украшения с характером природы</h1>
+          <p class="lead">Премиальная витрина авторских украшений из камней с вниманием к подбору пары, фактуре и посадке.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/catalog">Смотреть каталог</a>
+            <a class="btn btn-secondary" href="#process">Как создается</a>
+          </div>
+        </div>
+        <div class="hero-panel reveal-delay">
+          <div class="hero-card">
+            <span id="hero-collection-badge" class="badge">Новая коллекция</span>
+            <h2 id="hero-collection-title">Северный свет</h2>
+            <p id="hero-collection-description">Опал, лунный камень, кварц и серебро в спокойной палитре.</p>
+            <div id="hero-collection-stones" class="stone-list">
+              <span>Опал</span>
+              <span>Агат</span>
+              <span>Турмалин</span>
+              <span>Кварц</span>
+            </div>
+            <a id="hero-collection-link" class="btn btn-secondary hero-card-link" href="/collections/severny-svet">Страница коллекции</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section section-soft" id="catalog">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Каталог</p>
+            <h2>Украшения из камней</h2>
+          </div>
+          <a class="ghost-link" href="/catalog">Открыть каталог</a>
+        </div>
+        <div id="catalog-filters" class="catalog-filters"></div>
+        <div id="active-filters" class="active-filters"></div>
+        <div id="catalog-grid" class="catalog-grid">
+          <div class="loading-card">Загрузка каталога...</div>
+        </div>
+      </section>
+
+      <section class="section" id="collections">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Коллекции</p>
+            <h2>Собранные истории и палитры</h2>
+          </div>
+          <a class="ghost-link" href="/catalog">Открыть все товары</a>
+        </div>
+        <div id="collections-grid" class="collections-grid">
+          <div class="loading-card">Загрузка коллекций...</div>
+        </div>
+      </section>
+
+      <section class="section" id="process">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Storytelling</p>
+            <h2>Как создается украшение</h2>
+          </div>
+        </div>
+        <div id="process-grid" class="process-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Камни</p>
+            <h2>Энциклопедия камней</h2>
+          </div>
+        </div>
+        <div id="stones-grid" class="stones-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Отзывы</p>
+            <h2>Что говорят о Stone Atelier</h2>
+          </div>
+        </div>
+        <div id="reviews-strip" class="reviews-strip"></div>
+      </section>
+
+      <section class="section split" id="about">
+        <div class="split-card">
+          <p class="eyebrow">О мастерской</p>
+          <h2>Каждый камень выбирается вручную</h2>
+          <p>Мы подбираем пары по оттенку, прозрачности и рисунку, чтобы украшение выглядело гармонично в движении и вблизи.</p>
+          <p>Доступен персональный подбор комплекта, длины и посадки под образ, событие или подарок.</p>
+          <a class="btn btn-secondary" href="/about">Подробнее о процессе</a>
+        </div>
+        <div class="split-card accent">
+          <p class="eyebrow">Помощь с выбором</p>
+          <h2>Размеры, упаковка и индивидуальный заказ</h2>
+          <div class="link-list" id="assist-links"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-grid">
+        <div>
+          <p>Stone Atelier • Украшения из натуральных камней</p>
+          <p class="small-muted">Премиальная ручная сборка, подбор камней и аккуратная упаковка.</p>
+        </div>
+        <div id="footer-links" class="footer-links"></div>
+      </div>
+    </footer>
+
+    <div id="quick-view-modal" class="quick-view-modal hidden" aria-hidden="true"></div>
+
+    <script src="/site-content.js"></script>
+    <script src="/storefront.js"></script>
+  </body>
+</html>
