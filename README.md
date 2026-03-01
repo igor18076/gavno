@@ -104,3 +104,14 @@ CMS_TEST_ADMIN_EMAIL=admin@example.com \
 CMS_TEST_ADMIN_PASSWORD=your_password \
 npm run test:integration
 ```
+
+## Python version (Flask)
+
+If you need a runtime without Node/npm issues, use the Python stack:
+
+```bash
+docker compose -f docker-compose.py.yml up --build -d
+```
+
+App URL: `http://localhost:3000`
+Admin URL: `http://localhost:3000/admin`
