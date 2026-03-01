@@ -826,12 +826,19 @@ def app_factory():
     p=PUBLIC / 'site-content.js'
     site_settings = {}
     reviews = []
+    process_steps = []
+    packaging_photo = ''
     with conn() as c:
       with c.cursor() as cur:
         cur.execute("SELECT value_json FROM cms_settings WHERE key=%s", ('site',))
         row = cur.fetchone()
         raw = (row or {}).get('value_json') or {}
         site_settings = raw.get('value') if isinstance(raw, dict) and 'value' in raw and isinstance(raw.get('value'), dict) else raw
+        if isinstance(site_settings, dict):
+          ps = site_settings.get('processSteps')
+          if isinstance(ps, list):
+            process_steps = [x for x in ps if isinstance(x, dict)]
+          packaging_photo = str(site_settings.get('packagingPhoto') or '').strip()
         cur.execute("""
           SELECT r.id,r.name,r.city,r.text,r.occasion,r.photo_url,r.review_date,p.slug AS product_slug
           FROM cms_reviews r
@@ -854,6 +861,10 @@ def app_factory():
       "\nwindow.StoneAtelierContent = window.StoneAtelierContent || {};\n"
       f"window.StoneAtelierContent.siteSettings = {json.dumps(site_settings, ensure_ascii=False)};\n"
       f"window.StoneAtelierContent.reviews = {json.dumps(reviews, ensure_ascii=False)};\n"
+      f"const __siteProcessSteps = {json.dumps(process_steps, ensure_ascii=False)};\n"
+      "if (Array.isArray(__siteProcessSteps) && __siteProcessSteps.length) window.StoneAtelierContent.processSteps = __siteProcessSteps;\n"
+      f"const __sitePackagingPhoto = {json.dumps(packaging_photo, ensure_ascii=False)};\n"
+      "if (__sitePackagingPhoto) { window.StoneAtelierContent.packaging = window.StoneAtelierContent.packaging || {}; window.StoneAtelierContent.packaging.photo = __sitePackagingPhoto; }\n"
       "window.StoneAtelierContent.helpers = window.StoneAtelierContent.helpers || {};\n"
       "window.StoneAtelierContent.helpers.reviewsById = Object.fromEntries((window.StoneAtelierContent.reviews || []).map((x) => [x.id, x]));\n"
       "const __reviewsByProduct = {};\n"

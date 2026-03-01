@@ -33,6 +33,21 @@ function safeJsonParse(raw, fallback){ try { return raw ? JSON.parse(raw) : fall
 function parseNum(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
 function parseCsv(raw){ return String(raw || "").split(",").map(x => x.trim()).filter(Boolean); }
 function parseLines(raw){ return String(raw || "").split(/\r?\n/).map(x => x.trim()).filter(Boolean); }
+function parseProcessStepsText(raw){
+  return parseLines(raw).map((line, idx) => {
+    const parts = line.split("|").map((x) => x.trim());
+    return {
+      title: parts[0] || `Шаг ${idx + 1}`,
+      caption: parts[1] || "",
+      image: parts.slice(2).join("|").trim()
+    };
+  }).filter((x) => x.title || x.caption || x.image);
+}
+function formatProcessStepsText(list){
+  return (Array.isArray(list) ? list : [])
+    .map((x) => `${x.title || ""} | ${x.caption || ""} | ${x.image || ""}`)
+    .join("\n");
+}
 function parseVariationsText(raw){
   return parseLines(raw).map((line, idx) => {
     const [label="", priceDelta="", key=""] = line.split("|").map((x) => x.trim());
@@ -308,6 +323,9 @@ function settingsTabHtml(){
   const ff = value.featureFlags || {};
   const homepage = value.homepage || {};
   const orderCta = value.orderCta || {};
+  const fallbackSteps = Array.isArray(window.StoneAtelierContent?.processSteps) ? window.StoneAtelierContent.processSteps : [];
+  const processSteps = Array.isArray(value.processSteps) && value.processSteps.length ? value.processSteps : fallbackSteps;
+  const packagingPhoto = value.packagingPhoto || window.StoneAtelierContent?.packaging?.photo || "";
   const heroCollectionOptions = [`<option value="">Автовыбор (первая коллекция)</option>`]
     .concat((cmsState.lookups.collections || []).map((c) => `<option value="${esc(c.slug)}" ${String(homepage.heroCollectionSlug || "") === String(c.slug) ? "selected" : ""}>${esc(c.name)}</option>`))
     .join("");
@@ -325,6 +343,8 @@ function settingsTabHtml(){
     ${renderField("Ссылка второй кнопки","orderSecondaryHref",orderCta.secondaryHref||"/policies/custom-order?source=secondary&product={slug}","text","","Поддерживается шаблон {slug}.")}
     ${renderSelectField("Hero-коллекция на главной","homeHeroCollectionSlug",heroCollectionOptions,"Можно выбрать существующую коллекцию для блока «Новая коллекция». Если не выбрано — будет первая коллекция.")}
     ${renderField("Текст бейджа hero","homeHeroBadge",homepage.heroBadge||"Новая коллекция","text","","Например: Новая коллекция / Выбор сезона")}
+    ${renderTextarea("Шаги «Как создается украшение»","processStepsText",formatProcessStepsText(processSteps),7,"По одной строке на шаг: Заголовок | Описание | URL изображения. Пример: Выбор камней | Отбираем по свету и оттенку | https://...")}
+    ${renderImageField("Фото упаковки","packagingPhoto",packagingPhoto,"Изображение для страницы «Упаковка».")}
     <fieldset class="cms-fieldset"><legend>Переключатели секций</legend>
       <p class="cms-section-note">Включайте/выключайте отдельные блоки витрины без редактирования кода.</p>
       <label class="check"><input type="checkbox" name="ffShowProcess" ${ff.showProcess === false ? "" : "checked"} /> Показать блок процесса создания</label>
@@ -361,6 +381,8 @@ function renderTab(){
 
 function stoneFields(item={}){
   const textureImages = item.texture_images_json || item.textureImages || [];
+  const textureCoverImage = Array.isArray(textureImages) ? (textureImages[0] || "") : "";
+  const textureExtraImages = Array.isArray(textureImages) ? textureImages.slice(1) : [];
   return [
     renderField("Название","name",item.name,"text","","Название камня для энциклопедии и фильтров."),
     renderField("Slug","slug",item.slug||slugify(item.name||""),"text","","URL страницы камня: /stones/<slug>."),
@@ -370,7 +392,8 @@ function stoneFields(item={}){
     renderTextarea("Как носить","howToWear",item.how_to_wear||item.howToWear,2,"Подсказки по сочетаниям и стилю."),
     renderTextarea("Уход","care",item.care,2,"Как хранить и очищать камень."),
     renderField("Оттенки","shades",Array.isArray(item.shades_json || item.shades) ? (item.shades_json || item.shades).join(", ") : "","text","","Через запятую: молочный, голубой, дымчатый"),
-    renderTextarea("Изображения текстуры","textureImages",Array.isArray(textureImages) ? textureImages.join("\n") : "",4,"По одному URL в строке. Можно загрузить файлы в разделе «Медиа», затем вставить ссылки."),
+    renderImageField("Главное изображение текстуры","textureCoverImage",textureCoverImage,"Главная картинка камня для энциклопедии и карточек."),
+    renderTextarea("Дополнительные изображения текстуры","textureImages",Array.isArray(textureExtraImages) ? textureExtraImages.join("\n") : "",4,"По одному URL в строке. Можно загрузить файлы в разделе «Медиа», затем вставить ссылки."),
     renderField("SEO title","seoMetaTitle",item.seo_meta_title||item.seoMetaTitle,"text","","Заголовок для поисковых систем."),
     renderField("SEO description","seoMetaDescription",item.seo_meta_description||item.seoMetaDescription,"text","","Описание для поисковых систем."),
     renderImageField("SEO OG-изображение","seoOgImage",item.seo_og_image||item.seoOgImage,"Превью ссылки на страницу камня."),
@@ -445,7 +468,13 @@ async function submitProductForm(form){
 async function submitSimpleForm(kind, form){
   const id = form.dataset.id; const fd = new FormData(form);
   const body = Object.fromEntries(fd.entries());
-  if(kind === "stones"){ body.shades = parseCsv(body.shades); body.textureImages = parseLines(body.textureImages); }
+  if(kind === "stones"){
+    body.shades = parseCsv(body.shades);
+    const cover = String(body.textureCoverImage || "").trim();
+    const extra = parseLines(body.textureImages);
+    body.textureImages = [cover, ...extra].filter(Boolean).filter((x, idx, arr) => arr.indexOf(x) === idx);
+    delete body.textureCoverImage;
+  }
   if(kind === "collections"){ body.palette = parseCsv(body.palette); body.keyStones = fd.getAll("keyStoneIds"); }
   if(kind === "pages"){}
   const url = id ? `/api/admin/cms/${kind}/${id}` : `/api/admin/cms/${kind}`;
@@ -609,6 +638,7 @@ function bindEvents(){
         const fd=new FormData(form);
         const currentRaw = (cmsState.caches.settings?.items || []).find(x => x.key === "site")?.value_json || {};
         const current = currentRaw?.value || currentRaw;
+        const parsedProcessSteps = parseProcessStepsText(fd.get('processStepsText'));
         const body={
           ...current,
           brandName: fd.get('brandName'),
@@ -621,6 +651,8 @@ function bindEvents(){
             secondaryLabel: fd.get('orderSecondaryLabel') || "Запросить",
             secondaryHref: fd.get('orderSecondaryHref') || "/policies/custom-order?source=secondary&product={slug}"
           },
+          processSteps: parsedProcessSteps,
+          packagingPhoto: String(fd.get('packagingPhoto') || "").trim(),
           homepage:{ ...(current.homepage || {}), heroCollectionSlug: fd.get('homeHeroCollectionSlug') || "", heroBadge: fd.get('homeHeroBadge') || "Новая коллекция" },
           featureFlags:{ ...(current.featureFlags || {}), showProcess: fd.get('ffShowProcess') === 'on', showReviews: fd.get('ffShowReviews') === 'on', showStoneGuide: fd.get('ffShowStoneGuide') === 'on' }
         };
