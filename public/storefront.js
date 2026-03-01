@@ -5,6 +5,7 @@
   const { products, stones, collections, reviews, processSteps, packaging, sizeGuide, policies, footerLinks, helpers, heroCollection } = content;
   const siteSettings = content.siteSettings || {};
   const orderCta = siteSettings.orderCta || {};
+  const appearance = siteSettings.appearance || {};
 
   const state = {
     filters: {
@@ -58,6 +59,49 @@
 
   function replaceSlug(template, slug) {
     return String(template || "").replaceAll("{slug}", encodeURIComponent(String(slug || "")));
+  }
+
+  function clamp(value, min, max, fallback) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return fallback;
+    return Math.max(min, Math.min(max, num));
+  }
+
+  function applyAppearance() {
+    const root = document.documentElement;
+    const body = document.body;
+    if (!root || !body) return;
+
+    const text = String(appearance.textColor || "").trim();
+    const muted = String(appearance.mutedColor || "").trim();
+    const accent = String(appearance.accentColor || "").trim();
+    const accent2 = String(appearance.accent2Color || "").trim();
+    const line = String(appearance.lineColor || "").trim();
+    if (text) root.style.setProperty("--text", text);
+    if (muted) root.style.setProperty("--muted", muted);
+    if (accent) root.style.setProperty("--accent", accent);
+    if (accent2) root.style.setProperty("--accent-2", accent2);
+    if (line) root.style.setProperty("--line", line);
+
+    const mode = String(appearance.mode || "gradient").toLowerCase();
+    const bgColor = String(appearance.backgroundColor || "#0f1319").trim();
+    const gradFrom = String(appearance.gradientFrom || "#0a0d11").trim();
+    const gradTo = String(appearance.gradientTo || "#0b0f14").trim();
+    const imageUrl = String(appearance.backgroundImage || "").trim().replace(/'/g, "\\'");
+    const overlay = clamp(appearance.overlay, 0, 0.9, 0.45);
+    const noiseOpacity = clamp(appearance.noiseOpacity, 0, 0.25, 0.05);
+    const noise = document.querySelector(".noise");
+    if (noise) noise.style.opacity = String(noiseOpacity);
+
+    if (mode === "color") {
+      body.style.background = bgColor;
+      return;
+    }
+    if (mode === "image" && imageUrl) {
+      body.style.background = `linear-gradient(rgba(8,10,13,${overlay}), rgba(8,10,13,${overlay})), url('${imageUrl}') center / cover fixed no-repeat`;
+      return;
+    }
+    body.style.background = `radial-gradient(circle at 10% 0%, rgba(217, 167, 107, 0.18), transparent 42%), radial-gradient(circle at 90% 10%, rgba(159, 199, 196, 0.14), transparent 45%), linear-gradient(180deg, ${gradFrom}, ${gradTo})`;
   }
 
   function getOrderActions(product) {
@@ -711,6 +755,7 @@
     if (document.body.dataset.page === "home") renderHomeExtras();
   }
 
+  applyAppearance();
   const page = document.body.dataset.page;
   if (page === "home" || page === "catalog") initHomeOrCatalog();
   if (page === "product") renderProductPage();

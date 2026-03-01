@@ -323,6 +323,7 @@ function settingsTabHtml(){
   const ff = value.featureFlags || {};
   const homepage = value.homepage || {};
   const orderCta = value.orderCta || {};
+  const appearance = value.appearance || {};
   const fallbackSteps = Array.isArray(window.StoneAtelierContent?.processSteps) ? window.StoneAtelierContent.processSteps : [];
   const processSteps = Array.isArray(value.processSteps) && value.processSteps.length ? value.processSteps : fallbackSteps;
   const packagingPhoto = value.packagingPhoto || window.StoneAtelierContent?.packaging?.photo || "";
@@ -343,6 +344,25 @@ function settingsTabHtml(){
     ${renderField("Ссылка второй кнопки","orderSecondaryHref",orderCta.secondaryHref||"/policies/custom-order?source=secondary&product={slug}","text","","Поддерживается шаблон {slug}.")}
     ${renderSelectField("Hero-коллекция на главной","homeHeroCollectionSlug",heroCollectionOptions,"Можно выбрать существующую коллекцию для блока «Новая коллекция». Если не выбрано — будет первая коллекция.")}
     ${renderField("Текст бейджа hero","homeHeroBadge",homepage.heroBadge||"Новая коллекция","text","","Например: Новая коллекция / Выбор сезона")}
+    <fieldset class="cms-fieldset"><legend>Внешний вид витрины</legend>
+      <p class="cms-section-note">Управление цветовой гаммой и фоном сайта.</p>
+      ${renderSelectField("Режим фона","appearanceMode",`
+        <option value="gradient" ${String(appearance.mode||"gradient")==="gradient"?"selected":""}>Градиент</option>
+        <option value="color" ${String(appearance.mode||"")==="color"?"selected":""}>Однотонный</option>
+        <option value="image" ${String(appearance.mode||"")==="image"?"selected":""}>Изображение</option>
+      `,"Выберите, как строится фон сайта.")}
+      ${renderField("Цвет фона","appearanceBgColor",appearance.backgroundColor||"#0f1319","color","","Используется в режиме «Однотонный».")}
+      ${renderField("Градиент: цвет 1","appearanceGradientFrom",appearance.gradientFrom||"#0a0d11","color","","Начальный цвет градиента.")}
+      ${renderField("Градиент: цвет 2","appearanceGradientTo",appearance.gradientTo||"#0b0f14","color","","Конечный цвет градиента.")}
+      ${renderImageField("Фоновое изображение","appearanceBgImage",appearance.backgroundImage||"","Используется в режиме «Изображение».")}
+      ${renderField("Затемнение фона","appearanceOverlay",String(appearance.overlay ?? 0.45),"number","min='0' max='0.9' step='0.05'","0 - без затемнения, 0.9 - очень темно.")}
+      ${renderField("Насыщенность шума","appearanceNoiseOpacity",String(appearance.noiseOpacity ?? 0.05),"number","min='0' max='0.25' step='0.01'","Интенсивность декоративного слоя шума.")}
+      ${renderField("Текст","appearanceText",appearance.textColor||"#f3efe8","color","","Основной цвет текста.")}
+      ${renderField("Приглушенный текст","appearanceMuted",appearance.mutedColor||"#c2b8aa","color","","Цвет второстепенного текста.")}
+      ${renderField("Акцент","appearanceAccent",appearance.accentColor||"#d9a76b","color","","Основной акцентный цвет.")}
+      ${renderField("Второй акцент","appearanceAccent2",appearance.accent2Color||"#9fc7c4","color","","Дополнительный акцент.")}
+      ${renderField("Линии/границы","appearanceLine",appearance.lineColor||"rgba(255,255,255,0.12)","text","","Можно hex или rgba, например rgba(255,255,255,0.12).")}
+    </fieldset>
     ${renderTextarea("Шаги «Как создается украшение»","processStepsText",formatProcessStepsText(processSteps),7,"По одной строке на шаг: Заголовок | Описание | URL изображения. Пример: Выбор камней | Отбираем по свету и оттенку | https://...")}
     ${renderImageField("Фото упаковки","packagingPhoto",packagingPhoto,"Изображение для страницы «Упаковка».")}
     <fieldset class="cms-fieldset"><legend>Переключатели секций</legend>
@@ -653,6 +673,21 @@ function bindEvents(){
           },
           processSteps: parsedProcessSteps,
           packagingPhoto: String(fd.get('packagingPhoto') || "").trim(),
+          appearance: {
+            ...(current.appearance || {}),
+            mode: String(fd.get('appearanceMode') || 'gradient'),
+            backgroundColor: String(fd.get('appearanceBgColor') || '#0f1319'),
+            gradientFrom: String(fd.get('appearanceGradientFrom') || '#0a0d11'),
+            gradientTo: String(fd.get('appearanceGradientTo') || '#0b0f14'),
+            backgroundImage: String(fd.get('appearanceBgImage') || '').trim(),
+            overlay: Number(fd.get('appearanceOverlay') || 0.45),
+            noiseOpacity: Number(fd.get('appearanceNoiseOpacity') || 0.05),
+            textColor: String(fd.get('appearanceText') || '#f3efe8'),
+            mutedColor: String(fd.get('appearanceMuted') || '#c2b8aa'),
+            accentColor: String(fd.get('appearanceAccent') || '#d9a76b'),
+            accent2Color: String(fd.get('appearanceAccent2') || '#9fc7c4'),
+            lineColor: String(fd.get('appearanceLine') || 'rgba(255,255,255,0.12)')
+          },
           homepage:{ ...(current.homepage || {}), heroCollectionSlug: fd.get('homeHeroCollectionSlug') || "", heroBadge: fd.get('homeHeroBadge') || "Новая коллекция" },
           featureFlags:{ ...(current.featureFlags || {}), showProcess: fd.get('ffShowProcess') === 'on', showReviews: fd.get('ffShowReviews') === 'on', showStoneGuide: fd.get('ffShowStoneGuide') === 'on' }
         };
