@@ -1,7 +1,10 @@
-node_modules
-npm-debug.log
-.git
+﻿.git
 .gitignore
 .env
 .env.*
+__pycache__
+*.pyc
+.venv
+node_modules
+npm-debug.log
 uploads

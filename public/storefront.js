@@ -3,6 +3,8 @@
   if (!content) return;
 
   const { products, stones, collections, reviews, processSteps, packaging, sizeGuide, policies, footerLinks, helpers, heroCollection } = content;
+  const siteSettings = content.siteSettings || {};
+  const orderCta = siteSettings.orderCta || {};
 
   const state = {
     filters: {
@@ -52,6 +54,20 @@
     const image = firstNonEmpty(url);
     if (image) return `background-image:url('${esc(image)}')`;
     return `background-image:${fallbackGradient || "linear-gradient(135deg, rgba(201,171,110,.2), rgba(86,129,142,.22))"}`;
+  }
+
+  function replaceSlug(template, slug) {
+    return String(template || "").replaceAll("{slug}", encodeURIComponent(String(slug || "")));
+  }
+
+  function getOrderActions(product) {
+    const fallbackHref = "/policies/custom-order";
+    return {
+      primaryLabel: String(orderCta.primaryLabel || "Заказать"),
+      secondaryLabel: String(orderCta.secondaryLabel || "Запросить"),
+      primaryHref: replaceSlug(orderCta.primaryHref || fallbackHref, product?.slug),
+      secondaryHref: replaceSlug(orderCta.secondaryHref || fallbackHref, product?.slug)
+    };
   }
 
   function productCard(product, options = {}) {
@@ -434,6 +450,7 @@
     const productReviews = helpers.getProductReviews(product);
     const related = helpers.getRelatedProducts(product);
     const [main, ...thumbs] = product.images;
+    const orderActions = getOrderActions(product);
     root.innerHTML = `
       <nav class="topbar topbar-rich page-topbar">
         <a class="brand-link" href="/"><div class="brand">Stone Atelier</div></a>
@@ -464,8 +481,8 @@
             </select>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" type="button">Заказать</button>
-            <button class="btn btn-secondary" type="button">Запросить</button>
+            <a class="btn btn-primary" href="${esc(orderActions.primaryHref)}">${esc(orderActions.primaryLabel)}</a>
+            <a class="btn btn-secondary" href="${esc(orderActions.secondaryHref)}">${esc(orderActions.secondaryLabel)}</a>
           </div>
           <div class="spec-list">
             <div><span>Металл</span><strong>${esc(product.metal)}</strong></div>

@@ -299,10 +299,11 @@ function mediaTabHtml(){ const d=cmsState.caches.media||{items:[]}; return `<div
 function settingsTabHtml(){
   const items = cmsState.caches.settings?.items || [];
   const site = items.find(x=>x.key === "site") || { key:"site", value_json:{} };
-  const value = site.value_json || {};
+  const value = site.value_json?.value || site.value_json || {};
   const seo = value.seoDefaults || {};
   const ff = value.featureFlags || {};
   const homepage = value.homepage || {};
+  const orderCta = value.orderCta || {};
   const heroCollectionOptions = [`<option value="">Автовыбор (первая коллекция)</option>`]
     .concat((cmsState.lookups.collections || []).map((c) => `<option value="${esc(c.slug)}" ${String(homepage.heroCollectionSlug || "") === String(c.slug) ? "selected" : ""}>${esc(c.name)}</option>`))
     .join("");
@@ -314,6 +315,10 @@ function settingsTabHtml(){
     ${renderField("SEO title по умолчанию","seoDefaultTitle",seo.title||"","text","","Используется, если у страницы нет собственного SEO title.")}
     ${renderField("SEO description по умолчанию","seoDefaultDescription",seo.description||"","text","","Короткое описание сайта по умолчанию.")}
     ${renderImageField("SEO OG-изображение по умолчанию","seoDefaultOgImage",seo.ogImage||"","Изображение по умолчанию для ссылок.")}
+    ${renderField("Текст кнопки заказа","orderPrimaryLabel",orderCta.primaryLabel||"Заказать","text","","Основная кнопка в карточке товара.")}
+    ${renderField("Ссылка кнопки заказа","orderPrimaryHref",orderCta.primaryHref||"/policies/custom-order?source=primary&product={slug}","text","","Поддерживается шаблон {slug}.")}
+    ${renderField("Текст второй кнопки","orderSecondaryLabel",orderCta.secondaryLabel||"Запросить","text","","Вторая кнопка в карточке товара.")}
+    ${renderField("Ссылка второй кнопки","orderSecondaryHref",orderCta.secondaryHref||"/policies/custom-order?source=secondary&product={slug}","text","","Поддерживается шаблон {slug}.")}
     ${renderSelectField("Hero-коллекция на главной","homeHeroCollectionSlug",heroCollectionOptions,"Можно выбрать существующую коллекцию для блока «Новая коллекция». Если не выбрано — будет первая коллекция.")}
     ${renderField("Текст бейджа hero","homeHeroBadge",homepage.heroBadge||"Новая коллекция","text","","Например: Новая коллекция / Выбор сезона")}
     <fieldset class="cms-fieldset"><legend>Переключатели секций</legend>
@@ -509,6 +514,22 @@ function bindEvents(){
       if(action === "products:filter"){ const f = cmsState.filters.products; f.search=document.getElementById('products-search').value; f.status=document.getElementById('products-status').value; f.collectionId=document.getElementById('products-collection').value; f.stoneId=document.getElementById('products-stone').value; f.page=1; await loadProducts(); renderTab(); return; }
       if(action === "products:reset-filters"){ cmsState.filters.products = { search:"", status:"", collectionId:"", stoneId:"", page:1, pageSize:20 }; await loadProducts(); renderTab(); return; }
       if(action === "products:select"){ const id=Number(btn.dataset.id); if(btn.checked) cmsState.selections.products.add(id); else cmsState.selections.products.delete(id); return; }
+      if(action === "toggle-all"){
+        const table = btn.closest("table");
+        if(!table) return;
+        const rowChecks = [...table.querySelectorAll("tbody input[type='checkbox'][data-action$=':select']")];
+        rowChecks.forEach((cb)=>{
+          cb.checked = btn.checked;
+          const id = Number(cb.dataset.id);
+          if(cb.dataset.action === "products:select"){
+            if(btn.checked) cmsState.selections.products.add(id); else cmsState.selections.products.delete(id);
+          }
+          if(cb.dataset.action === "reviews:select"){
+            if(btn.checked) cmsState.selections.reviews.add(id); else cmsState.selections.reviews.delete(id);
+          }
+        });
+        return;
+      }
       if(action === "products:bulk"){ const ids=[...cmsState.selections.products]; const bulk=document.getElementById('products-bulk-action').value; if(!ids.length || !bulk) return showToast("Выберите товары и действие","error"); await api('/api/admin/cms/products/bulk',{ method:'POST', body: JSON.stringify({ ids, action: bulk }) }); cmsState.selections.products.clear(); showToast('Пакетное действие выполнено'); await loadProducts(); refreshDashboard(); renderTab(); return; }
       if(action === "products:page"){ cmsState.filters.products.page = Number(btn.dataset.page||1); await loadProducts(); renderTab(); return; }
       if(action === "product:add-image-row"){ const list = document.getElementById('product-images-list'); const rows=[...list.querySelectorAll('.cms-image-row')].length; list.insertAdjacentHTML('beforeend', renderProductImageRows([{url:'',alt:'',sortOrder:rows,isCover:false,mediaId:''}])); return; }
@@ -517,7 +538,7 @@ function bindEvents(){
       if(action.endsWith(':search')){ cmsState.filters.generic.search = document.getElementById(`${action.split(':')[0]}-search`)?.value || cmsState.filters.generic.search; cmsState.filters.generic.page = 1; renderTab(); return; }
       if(action.match(/^(stones|collections|pages):new$/)){ clearCurrent(action.split(':')[0]); renderTab(); return; }
       if(action.match(/^(stones|collections|pages):edit$/)){ const kind=action.split(':')[0]; await fetchEntityById(kind, btn.dataset.id); renderTab(); return; }
-      if(action.match(/^(stones|collections|pages):delete$/)){ const kind=action.split(':')[0]; if(!confirm('Удалить?')) return; await api(`/api/admin/cms/${kind}/${btn.dataset.id}`,{method:'DELETE'}); showToast('Удалено'); clearCurrent(kind); refreshDashboard(); renderTab(); return; }
+      if(action.match(/^(stones|collections|pages):delete$/)){ const kind=action.split(':')[0]; if(!confirm('Удалить запись?')) return; await api(`/api/admin/cms/${kind}/${btn.dataset.id}`,{method:'DELETE'}); showToast('Удалено'); clearCurrent(kind); refreshDashboard(); renderTab(); return; }
 
       if(action === 'reviews:new'){ clearCurrent('reviews'); renderTab(); return; }
       if(action === 'reviews:edit'){ await fetchEntityById('reviews', btn.dataset.id); renderTab(); return; }
@@ -563,12 +584,20 @@ function bindEvents(){
       if(form.id === 'settings-form'){
         e.preventDefault();
         const fd=new FormData(form);
-        const current = (cmsState.caches.settings?.items || []).find(x => x.key === "site")?.value_json || {};
+        const currentRaw = (cmsState.caches.settings?.items || []).find(x => x.key === "site")?.value_json || {};
+        const current = currentRaw?.value || currentRaw;
         const body={
           ...current,
           brandName: fd.get('brandName'),
           contacts:{ ...(current.contacts || {}), email: fd.get('contactEmail'), telegram: fd.get('contactTelegram') },
           seoDefaults:{ ...(current.seoDefaults || {}), title: fd.get('seoDefaultTitle') || "", description: fd.get('seoDefaultDescription') || "", ogImage: fd.get('seoDefaultOgImage') || "" },
+          orderCta:{
+            ...(current.orderCta || {}),
+            primaryLabel: fd.get('orderPrimaryLabel') || "Заказать",
+            primaryHref: fd.get('orderPrimaryHref') || "/policies/custom-order?source=primary&product={slug}",
+            secondaryLabel: fd.get('orderSecondaryLabel') || "Запросить",
+            secondaryHref: fd.get('orderSecondaryHref') || "/policies/custom-order?source=secondary&product={slug}"
+          },
           homepage:{ ...(current.homepage || {}), heroCollectionSlug: fd.get('homeHeroCollectionSlug') || "", heroBadge: fd.get('homeHeroBadge') || "Новая коллекция" },
           featureFlags:{ ...(current.featureFlags || {}), showProcess: fd.get('ffShowProcess') === 'on', showReviews: fd.get('ffShowReviews') === 'on', showStoneGuide: fd.get('ffShowStoneGuide') === 'on' }
         };

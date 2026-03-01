@@ -1,15 +1,16 @@
-FROM node:20-bookworm-slim
+﻿FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund \
-  && node -e "console.log('express at:', require.resolve('express'))"
+COPY python_app/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY . .
+COPY public ./public
+COPY data ./data
+COPY python_app ./python_app
 
-ENV NODE_ENV=production
+ENV PYTHONUNBUFFERED=1
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["python", "python_app/app.py"]
