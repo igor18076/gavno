@@ -164,28 +164,60 @@ def init_db():
             stone_name = str(row.get('stone') or '').strip()
             cur.execute("INSERT INTO cms_stones (name,slug,description,symbolism,shades_json,texture_images_json,position) VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (slug) DO NOTHING",
               (stone_name, slug(stone_name), '', '', Json([]), Json([]), idx))
-        cur.execute("SELECT COUNT(*) AS c FROM cms_products WHERE deleted_at IS NULL")
-        if int((cur.fetchone() or {}).get('c') or 0) == 0:
-          cur.execute("SELECT id,name,stone,price,image_url,description,in_stock,featured FROM products ORDER BY id")
-          products_seed = cur.fetchall()
-          for idx, row in enumerate(products_seed):
-            name = str(row.get('name') or '').strip()
-            slug_val = slug(name) or f"product-{row['id']}"
-            status = 'published' if bool(row.get('in_stock')) else 'draft'
-            cur.execute("INSERT INTO cms_products (name,slug,type,collection_id,price,status,description,dimensions_json,position) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-              (name, slug_val, 'украшение', collection_id, int(row.get('price') or 0), status, str(row.get('description') or ''), Json({}), idx))
-            cms_product_id = cur.fetchone()['id']
-            image_url = str(row.get('image_url') or '').strip()
-            if image_url:
-              cur.execute("INSERT INTO cms_product_images (product_id,url,alt,sort_order,is_cover) VALUES (%s,%s,%s,%s,%s)",
-                (cms_product_id, image_url, name, 0, True))
-            stone_name = str(row.get('stone') or '').strip()
-            if stone_name:
-              cur.execute("SELECT id FROM cms_stones WHERE slug=%s AND deleted_at IS NULL", (slug(stone_name),))
-              stone_row = cur.fetchone()
-              if stone_row:
-                cur.execute("INSERT INTO cms_product_stones (product_id,stone_id,position) VALUES (%s,%s,%s)",
-                  (cms_product_id, stone_row['id'], 0))
+      if 'collection_id' not in locals():
+        cur.execute("SELECT id FROM cms_collections WHERE deleted_at IS NULL ORDER BY position,id LIMIT 1")
+        row = cur.fetchone()
+        if row:
+          collection_id = row['id']
+      cur.execute("SELECT COUNT(*) AS c FROM cms_products WHERE deleted_at IS NULL")
+      if int((cur.fetchone() or {}).get('c') or 0) == 0:
+        cur.execute("SELECT id,name,stone,price,image_url,description,in_stock,featured FROM products ORDER BY id")
+        products_seed = cur.fetchall()
+        for idx, row in enumerate(products_seed):
+          name = str(row.get('name') or '').strip()
+          slug_val = slug(name) or f"product-{row['id']}"
+          status = 'published' if bool(row.get('in_stock')) else 'draft'
+          cur.execute("INSERT INTO cms_products (name,slug,type,collection_id,price,status,description,dimensions_json,position) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+            (name, slug_val, 'украшение', collection_id, int(row.get('price') or 0), status, str(row.get('description') or ''), Json({}), idx))
+          cms_product_id = cur.fetchone()['id']
+          image_url = str(row.get('image_url') or '').strip()
+          if image_url:
+            cur.execute("INSERT INTO cms_product_images (product_id,url,alt,sort_order,is_cover) VALUES (%s,%s,%s,%s,%s)",
+              (cms_product_id, image_url, name, 0, True))
+          stone_name = str(row.get('stone') or '').strip()
+          if stone_name:
+            cur.execute("SELECT id FROM cms_stones WHERE slug=%s AND deleted_at IS NULL", (slug(stone_name),))
+            stone_row = cur.fetchone()
+            if stone_row:
+              cur.execute("INSERT INTO cms_product_stones (product_id,stone_id,position) VALUES (%s,%s,%s)",
+                (cms_product_id, stone_row['id'], 0))
+      cur.execute("SELECT COUNT(*) AS c FROM cms_reviews WHERE deleted_at IS NULL")
+      if int((cur.fetchone() or {}).get('c') or 0) == 0:
+        cur.execute("SELECT id,slug,name FROM cms_products WHERE deleted_at IS NULL ORDER BY id LIMIT 5")
+        product_rows = cur.fetchall()
+        demo_reviews = [
+          ("Анна", "Москва", "Очень аккуратная работа и красивая подача. Украшение выглядит даже лучше, чем на фото.", "подарок себе"),
+          ("Елена", "Санкт-Петербург", "Подобрали длину под образ и быстро ответили в чате. Ношу почти каждый день.", "повседневное"),
+          ("Марина", "Казань", "Камни выглядят натурально, оттенки очень живые. Упаковка тоже на уровне.", "подарок"),
+          ("Ольга", "Новосибирск", "Сделали в оговоренный срок, помогли с размером. Все село идеально.", "на каждый день"),
+          ("Ирина", "Екатеринбург", "Понравилось, что можно уточнить детали и настроить изделие под себя.", "индивидуальный заказ")
+        ]
+        for idx, row in enumerate(product_rows):
+          seed = demo_reviews[idx % len(demo_reviews)]
+          cur.execute(
+            """INSERT INTO cms_reviews
+               (product_id,name,city,text,status,source,occasion,photo_url,review_date)
+               VALUES (%s,%s,%s,%s,'approved','manual',%s,%s,%s)""",
+            (
+              row['id'],
+              seed[0],
+              seed[1],
+              seed[2],
+              seed[3],
+              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+              date.today().isoformat()
+            )
+          )
       cur.execute('SELECT id FROM admin_users WHERE email=%s', (ADMIN_EMAIL,))
       if not cur.fetchone():
         cur.execute('INSERT INTO admin_users (email,password_hash,role,is_active) VALUES (%s,%s,%s,TRUE)', (ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD), 'admin'))
@@ -793,16 +825,47 @@ def app_factory():
   def site_content_js():
     p=PUBLIC / 'site-content.js'
     site_settings = {}
+    reviews = []
     with conn() as c:
       with c.cursor() as cur:
         cur.execute("SELECT value_json FROM cms_settings WHERE key=%s", ('site',))
         row = cur.fetchone()
         raw = (row or {}).get('value_json') or {}
         site_settings = raw.get('value') if isinstance(raw, dict) and 'value' in raw and isinstance(raw.get('value'), dict) else raw
+        cur.execute("""
+          SELECT r.id,r.name,r.city,r.text,r.occasion,r.photo_url,r.review_date,p.slug AS product_slug
+          FROM cms_reviews r
+          LEFT JOIN cms_products p ON p.id=r.product_id AND p.deleted_at IS NULL
+          WHERE r.deleted_at IS NULL AND r.status='approved'
+          ORDER BY COALESCE(r.review_date, DATE(r.created_at)) DESC, r.id DESC
+        """)
+        for rr in cur.fetchall():
+          reviews.append({
+            'id': f"db-{rr['id']}",
+            'name': rr.get('name') or '',
+            'city': rr.get('city') or '',
+            'text': rr.get('text') or '',
+            'occasion': rr.get('occasion') or '',
+            'photo': rr.get('photo_url') or 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+            'productSlug': rr.get('product_slug') or ''
+          })
     base = p.read_text(encoding='utf-8') if p.exists() else "window.StoneAtelierContent={products:[],stones:[],collections:[],reviews:[]};"
     patch = (
       "\nwindow.StoneAtelierContent = window.StoneAtelierContent || {};\n"
       f"window.StoneAtelierContent.siteSettings = {json.dumps(site_settings, ensure_ascii=False)};\n"
+      f"window.StoneAtelierContent.reviews = {json.dumps(reviews, ensure_ascii=False)};\n"
+      "window.StoneAtelierContent.helpers = window.StoneAtelierContent.helpers || {};\n"
+      "window.StoneAtelierContent.helpers.reviewsById = Object.fromEntries((window.StoneAtelierContent.reviews || []).map((x) => [x.id, x]));\n"
+      "const __reviewsByProduct = {};\n"
+      "for (const __r of (window.StoneAtelierContent.reviews || [])) {\n"
+      "  if (!__r.productSlug) continue;\n"
+      "  if (!__reviewsByProduct[__r.productSlug]) __reviewsByProduct[__r.productSlug] = [];\n"
+      "  __reviewsByProduct[__r.productSlug].push(__r.id);\n"
+      "}\n"
+      "for (const __p of (window.StoneAtelierContent.products || [])) {\n"
+      "  const __ids = __reviewsByProduct[__p.slug] || [];\n"
+      "  if (__ids.length) __p.reviewIds = __ids;\n"
+      "}\n"
     )
     return app.response_class(base + patch, mimetype='application/javascript')
 

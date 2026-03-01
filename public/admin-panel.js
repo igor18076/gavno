@@ -43,8 +43,13 @@ function formatVariationsText(list){
   return (Array.isArray(list) ? list : []).map((v, idx) => `${v.label || ""}|${Number(v.priceDelta || 0)}|${v.variationKey || v.id || `var-${idx+1}`}`).join("\n");
 }
 function normalizeDimensionsForForm(d){ const x = d && typeof d === "object" ? d : {}; return { length: x.length || "", diameter: x.diameter || "", adjustable: x.adjustable || "" }; }
-function fieldHelp(text){ return text ? `<p class="cms-field-help">${esc(text)}</p>` : ""; }
-function fieldWrap(label, inputHtml, help=""){ return `<label class="cms-field"><span class="cms-field-label">${esc(label)}</span>${inputHtml}${fieldHelp(help)}</label>`; }
+function helpToggleHtml(text){
+  if(!text) return "";
+  return `<span class="cms-help"><button type="button" class="cms-help-btn" data-action="help:toggle" aria-expanded="false" aria-label="Подсказка">?</button><span class="cms-help-popover" role="note">${esc(text)}</span></span>`;
+}
+function fieldWrap(label, inputHtml, help=""){
+  return `<label class="cms-field"><span class="cms-field-label-row"><span class="cms-field-label">${esc(label)}</span>${helpToggleHtml(help)}</span>${inputHtml}</label>`;
+}
 function renderSelectField(label, name, optionsHtml, help=""){ return fieldWrap(label, `<select name="${esc(name)}">${optionsHtml}</select>`, help); }
 function roleLabel(v){ return ({ admin:"Администратор", editor:"Редактор", moderator:"Модератор" }[v] || v || ""); }
 function productStatusLabel(v){ return ({ draft:"Черновик", published:"Опубликован", archived:"Архив" }[v] || v || ""); }
@@ -57,7 +62,7 @@ function mediaSelectOptions(selectedUrl = ""){
 }
 function renderImageField(label, name, value, help="", attrs=""){
   return `<div class="cms-field">
-    <span class="cms-field-label">${esc(label)}</span>
+    <span class="cms-field-label-row"><span class="cms-field-label">${esc(label)}</span>${helpToggleHtml(help)}</span>
     <div class="cms-inline-media" data-inline-media-wrap>
       <div class="cms-inline-media-row">
         <input type="text" name="${esc(name)}" value="${esc(value ?? "")}" ${attrs} data-image-url-input />
@@ -67,7 +72,6 @@ function renderImageField(label, name, value, help="", attrs=""){
       <select class="cms-media-select" data-media-pick-select>${mediaSelectOptions(value)}</select>
       <span class="cms-media-hint">Можно загрузить файл прямо здесь или выбрать файл из медиабиблиотеки.</span>
     </div>
-    ${fieldHelp(help)}
   </div>`;
 }
 
@@ -475,6 +479,13 @@ function clearCurrent(kind){
   if(kind === "pages") cmsState.caches.pageCurrent = null;
   if(kind === "users") cmsState.caches.userCurrent = null;
 }
+function closeHelpPopovers(){
+  document.querySelectorAll('.cms-help.open').forEach((wrap)=>{
+    wrap.classList.remove('open');
+    const btn = wrap.querySelector('.cms-help-btn');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  });
+}
 
 function bindEvents(){
   nodes.loginForm?.addEventListener("submit", async (e)=>{
@@ -504,10 +515,22 @@ function bindEvents(){
   });
 
   document.addEventListener("click", async (e)=>{
+    if(!e.target.closest(".cms-help")) closeHelpPopovers();
     const btn = e.target.closest("[data-action]");
     if(!btn) return;
     const action = btn.dataset.action;
     try {
+      if(action === "help:toggle"){
+        const wrap = btn.closest(".cms-help");
+        if(!wrap) return;
+        const willOpen = !wrap.classList.contains("open");
+        closeHelpPopovers();
+        if(willOpen){
+          wrap.classList.add("open");
+          btn.setAttribute("aria-expanded", "true");
+        }
+        return;
+      }
       if(action === "products:new"){ clearCurrent("products"); renderTab(); return; }
       if(action === "products:edit"){ await fetchEntityById("products", btn.dataset.id); renderTab(); return; }
       if(action === "products:delete"){ if(!confirm("Архивировать товар?")) return; await api(`/api/admin/cms/products/${btn.dataset.id}`, { method:"DELETE" }); showToast("Товар архивирован"); await loadProducts(); refreshDashboard(); renderTab(); return; }
@@ -637,6 +660,7 @@ function bindEvents(){
   document.addEventListener('dragover', (e)=>{ const dz=e.target.closest('#media-dropzone'); if(dz){ e.preventDefault(); dz.classList.add('drag'); } });
   document.addEventListener('dragleave', (e)=>{ const dz=e.target.closest('#media-dropzone'); if(dz) dz.classList.remove('drag'); });
   document.addEventListener('drop', (e)=>{ const dz=e.target.closest('#media-dropzone'); if(dz){ e.preventDefault(); dz.classList.remove('drag'); uploadMediaFiles([...(e.dataTransfer?.files || [])]); } });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeHelpPopovers(); });
 }
 
 async function uploadMediaFiles(files){
