@@ -127,6 +127,8 @@ def init_db():
       CREATE TABLE IF NOT EXISTS cms_media (id BIGSERIAL PRIMARY KEY,original_name TEXT NOT NULL,public_url TEXT NOT NULL,preview_url TEXT NOT NULL,size_bytes BIGINT NOT NULL DEFAULT 0,file_path TEXT NOT NULL,meta_json JSONB NOT NULL DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
       CREATE TABLE IF NOT EXISTS audit_log (id BIGSERIAL PRIMARY KEY,user_id BIGINT,action TEXT NOT NULL,entity TEXT NOT NULL,entity_id TEXT,payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
       ''')
+      # Backward-compatible schema fixes for already existing databases.
+      cur.execute("ALTER TABLE cms_products ADD COLUMN IF NOT EXISTS position INTEGER NOT NULL DEFAULT 0;")
       cur.execute('INSERT INTO site_settings (key,value) VALUES (%s,%s) ON CONFLICT (key) DO NOTHING', ('heroCollection', Json({'badge':'Новая коллекция','title':'Северный свет','description':'Опал, лунный камень, кварц и серебро в спокойной палитре.','stones':['Опал','Агат','Турмалин','Кварц']})))
       cur.execute('SELECT COUNT(*) AS c FROM products')
       if (cur.fetchone() or {}).get('c',0)==0 and DATA.exists():
