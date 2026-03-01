@@ -1,13 +1,12 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev \
+RUN npm install --omit=dev --no-audit --no-fund \
   && node -e "console.log('express at:', require.resolve('express'))"
 
 COPY . .
-RUN node -e "console.log('express after copy at:', require.resolve('express'))"
 
 ENV NODE_ENV=production
 ENV PORT=3000
